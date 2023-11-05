@@ -11,16 +11,9 @@ curl http://127.0.0.1:8000/api/newCompetition -d '{"competition_name":"test", "c
 ```
 
 ## How to install
-
-```bash
-
-pip3 install -r requirements.txt
-
-```
-
-## How to start
 - Install `python3-dotenv`
-- Write to .env folder
+- Install and configure MySQL server
+- Write to .env file
     ```bash
 
         mysql_server
@@ -28,6 +21,14 @@ pip3 install -r requirements.txt
         mysql_pass=
 
     ```
+    
+```bash
+
+pip3 install -r requirements.txt
+
+```
+
+## How to start
 
 ```bash
 
