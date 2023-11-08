@@ -1,3 +1,6 @@
 fastapi
 uvicorn
 aiomysql
+streamlit
+requests
+extra-streamlit-components
