@@ -60,12 +60,13 @@ async def create_contest(competition: Request):
       async with connection.cursor() as cursor:
 
           # Create 'competition' table if not exists in the database
-          await cursor.execute('CREATE TABLE IF NOT EXISTS competition (id INT NOT NULL PRIMARY KEY AUTO_INCREMENT,name VARCHAR(100) NOT NULL,date DATE NOT NULL);')
+          await cursor.execute('CREATE TABLE IF NOT EXISTS competition (id INT NOT NULL PRIMARY KEY AUTO_INCREMENT,name VARCHAR(100) NOT NULL,date DATE NOT NULL,track_length INT NOT NULL);')
           
            # Insert the competition information into the 'competition' table
-          await cursor.execute('INSERT INTO competition (name, date) VALUES (%s, %s)', (
+          await cursor.execute('INSERT INTO competition (name, date, track_length) VALUES (%s, %s, %s)', (
               competition_info["competition_name"], 
-              competition_info["competition_date"]
+              competition_info["competition_date"],
+              competition_info["track_length"]
           ))
           
           id = cursor.lastrowid
