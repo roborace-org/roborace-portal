@@ -50,14 +50,6 @@ async def create_pool(app: FastAPI):
 
 app = FastAPI(lifespan=create_pool)
 
-async def keyGenerator():
-        keyInfo = os.environ["gen_token"]
-        curDate = datetime.date.now() 
-        new_session = keyInfo + curDate
-
-        keyAlgo = hashlib.sha3_512(hash_code(new_session)).hexdigest()
-        return keyAlgo
-
 @app.post("/api/newCompetition")
 async def create_contest(competition: Request):
    competition_info = await competition.json()
@@ -81,23 +73,6 @@ async def create_contest(competition: Request):
           id = cursor.lastrowid
 
    return {"id": id}
-
-@app.get("/api/newSession")
-async def newCookieSession(cookieInfo: Request):
-    cookie_gen = await cookieInfo.json()
-    if cookie_gen["session"] == os.environ["gen_token"]:
-        newGeneration = keyGenerator()
-        return newGeneration
-    else:
-        raise HTTPException(status_code=403, detail="Access denied")
-
-@app.get("/api/isValid")
-async def checkValid(cookie: Request):
-    cookieValid = await cookie.json()
-    if keyGenerator() == cookieValid["session"]:
-        return {"status": "valid"}
-    else:
-        return {"status": "invalid"}
 
 if __name__ == '__main__':
    uvicorn.run(app, host='0.0.0.0', port=8000)
