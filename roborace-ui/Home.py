@@ -19,5 +19,3 @@ footer {visibility: hidden;}
 
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 st.write("Welcome to RoboRace Portal 🤖")
-value = cookie_manager.get(cookie="session-key")
-st.write(value)
