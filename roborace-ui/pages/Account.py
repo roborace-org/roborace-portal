@@ -16,7 +16,7 @@ def cookie_rewriter(new_cookie):
         with open(json_file_path, 'r') as file:
             data = json.load(file)
 
-        if 'cookie_info' not in data or not data['cookie_info']  or data['cookie_info'] != new_cookie:
+        if 'cookie_info' not in data or not data['cookie_info'] or data['cookie_info'] != new_cookie:
             data['cookie_info'] = new_cookie
 
             with open(json_file_path, 'w') as file:
@@ -74,20 +74,20 @@ def password():
             st.session_state["password_correct"] = True 
         else:
             st.session_state["password_correct"] = False    
-    global password
-    password = st.empty()
+    global password_row
+    password_row = st.empty()
     
     if cookie_manager.get(cookie="session-key") != None and cookie_validator() == cookie_manager.get(cookie="session-key"):
             return True
     else:
-            password.text_input("Password", type="password", on_change=password_entered, key="password")
+            password_row.text_input("Password", type="password", on_change=password_entered, key="password")
     if "password_correct" in st.session_state:
         try:
             if st.session_state["password_correct"] == True:
                 hashed_session = hashlib.sha256(str(hash_code(st.session_state["password"])).encode('utf-8')).hexdigest()
                 new_cookie = keyGenerator(hashed_session)
                 cookie_manager.set("session-key", new_cookie)
-                password.empty()
+                password_row.empty()
                 del st.session_state["password"]
                 cookie_rewriter(cookie_manager.get(cookie="session-key")) 
                 return True
@@ -99,4 +99,29 @@ def password():
 if not password():
     st.stop()
 
-st.write("👋 Hello Admin!")
+if cookie_manager.get(cookie="session-key") != None and cookie_validator() == cookie_manager.get(cookie="session-key"):
+    st.write("👋 Hello Admin!")
+    col1, col2 = st.columns([1,1])
+    with col1:
+        if st.button('Create contest'):
+            col1raw1, col2raw1, col3raw1, col4raw1 = st.columns([2,2,2,2])
+            with col1raw1:
+                contest_name = st.text_input("Competition name")
+            with col2raw1:
+                date = st.date_input("Competition date")
+            with col3raw1:
+                length = st.number_input("Track length")
+            with col4raw1:
+                if st.button("Create competition"):
+                    data = {
+                            "competition_name": contest_name,
+                            "competition_date": date,
+                            "authorization": cookie_manager.get(cookie="session-key"),
+                            "track_length": str(length)
+                            }
+                    try:
+                        response = requests.post("http://127.0.0.1:8000/api/newCompetition", json=data)
+                        getId = response.json()['id']
+                        st.success(f'Competition created. ID: {getId}')
+                    except:
+                        st.error("Error while processing your request")

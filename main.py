@@ -5,8 +5,9 @@ from dotenv import load_dotenv
 from auth_hash import *
 from contextlib import asynccontextmanager
 import uvicorn
-import hashlib
-import datetime
+import json
+
+cookie_file = "roborace-ui/cookie.json"
 
 @asynccontextmanager
 async def create_pool(app: FastAPI):
@@ -40,7 +41,7 @@ async def create_pool(app: FastAPI):
     except Exception as e:
        print("Error:", e)
        exit()
-    
+
     yield
     
     if racedb_pool:
@@ -50,11 +51,20 @@ async def create_pool(app: FastAPI):
 
 app = FastAPI(lifespan=create_pool)
 
+def get_cookie():
+    with open(cookie_file, "r") as file:
+        data = json.load(file)
+        try:
+            cookie_info = data['cookie_info']
+            return cookie_info
+        except:
+            return False
+        file.close()
 @app.post("/api/newCompetition")
 async def create_contest(competition: Request):
    competition_info = await competition.json()
    
-   if competition_info["authorization"] != keyGenerator():
+   if competition_info["authorization"] != get_cookie():
        raise HTTPException(status_code=403, detail="Access denied")
 
    async with app.state.db.acquire() as connection:
