@@ -16,26 +16,27 @@ def cookie_rewriter(new_cookie):
         with open(json_file_path, 'r') as file:
             data = json.load(file)
 
-        if 'cookie_info' not in data or not data['cookie_info']:
+        if 'cookie_info' not in data or not data['cookie_info']  or data['cookie_info'] != new_cookie:
             data['cookie_info'] = new_cookie
 
             with open(json_file_path, 'w') as file:
-                json.dump(data, file, indent=2)
-
+                json.dump(data, file)
+                file.close()
             return True
         else:
             return False
     except json.JSONDecodeError:
         data = {'cookie_info': new_cookie}
         with open(json_file_path, 'w') as file:
-            json.dump(data, file, indent=2)
+            json.dump(data, file)
+            file.close()
         return True
 
 def cookie_validator():
     try:
         with open(json_file_path, 'r') as file:
             data = json.load(file)
-
+            file.close()
         if not data or 'cookie_info' not in data:
             return False
 
