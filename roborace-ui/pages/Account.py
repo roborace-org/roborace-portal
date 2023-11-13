@@ -101,9 +101,11 @@ if not password():
 
 if cookie_manager.get(cookie="session-key") != None and cookie_validator() == cookie_manager.get(cookie="session-key"):
     st.write("👋 Hello Admin!")
-    col1, col2 = st.columns([1,1])
-    with col1:
-        if st.button('Create contest'):
+    chosen_id = stx.tab_bar(data=[
+    stx.TabBarItemData(id=1, title="Create competiton", description=""),
+    stx.TabBarItemData(id=2, title="Just a test buttom", description="")
+    ], default=2)
+    if chosen_id == '1':
             col1raw1, col2raw1, col3raw1, col4raw1 = st.columns([2,2,2,2])
             with col1raw1:
                 contest_name = st.text_input("Competition name")
@@ -115,7 +117,7 @@ if cookie_manager.get(cookie="session-key") != None and cookie_validator() == co
                 if st.button("Create competition"):
                     data = {
                             "competition_name": contest_name,
-                            "competition_date": date,
+                            "competition_date": str(date),
                             "authorization": cookie_manager.get(cookie="session-key"),
                             "track_length": str(length)
                             }
@@ -123,5 +125,7 @@ if cookie_manager.get(cookie="session-key") != None and cookie_validator() == co
                         response = requests.post("http://127.0.0.1:8000/api/newCompetition", json=data)
                         getId = response.json()['id']
                         st.success(f'Competition created. ID: {getId}')
-                    except:
-                        st.error("Error while processing your request")
+                    except Exception as e:
+                        st.error(f"Error while processing your request. Error {e}")
+    else:
+        st.info(f"{chosen_id=}")
