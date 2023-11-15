@@ -112,7 +112,7 @@ if cookie_manager.get(cookie="session-key") != None and cookie_validator() == co
             with col2raw1:
                 date = st.date_input("Competition date")
             with col3raw1:
-                length = st.number_input("Track length")
+                length = st.number_input("Track length", step=1, value=0)
             with col4raw1:
                 if st.button("Create competition"):
                     data = {
