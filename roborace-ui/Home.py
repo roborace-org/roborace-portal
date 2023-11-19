@@ -3,6 +3,7 @@ from auth_hash import *
 import requests
 import extra_streamlit_components as stx
 
+st.experimental_set_query_params()
 @st.cache_resource(experimental_allow_widgets=True)
 def get_manager():
     return stx.CookieManager()

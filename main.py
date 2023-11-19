@@ -16,12 +16,12 @@ def get_cookie():
             return False
         file.close()
 
-@app.post("/api/newCompetition")
+@app.post("/api/competitions")
 async def create_contest(competition: Request):
    competition_info = await competition.json()
    
    if competition_info["authorization"] != get_cookie():
-       raise HTTPException(status_code=403, detail="Access denied")
+    raise HTTPException(status_code=403, detail="Access denied")
 
    competitions_data = []
    file = open('competitions.json', 'a')
@@ -50,7 +50,7 @@ async def create_contest(competition: Request):
 
    return {"id": id_count}
 
-@app.get("/api/competition")
+@app.get("/api/competitions")
 async def getCompetitions():
     competitions_data = []
 
@@ -59,6 +59,15 @@ async def getCompetitions():
             competitions_data = json.load(file)
         
     return competitions_data
-
+@app.get("/api/competitions/{id}")
+async def get_robots(id: int):
+    if os.path.isdir("competitions-data") == False:
+        os.mkdir("competitions-data")
+        return {}
+    elif os.path.isfile(f"competitions-data/{id}.json") == False:
+        return {}
+    else:
+        with open(f'competitions-data/{id}.json') as file:
+            info = 
 if __name__ == '__main__':
-   uvicorn.run(app, host='0.0.0.0', port=8000)
+   uvicorn.run(app, host='127.0.0.1', port=8000)

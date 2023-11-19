@@ -11,6 +11,7 @@ json_file_path = 'cookie.json'
 file = open('cookie.json', 'a')
 file.close()
 
+st.experimental_set_query_params() 
 def cookie_rewriter(new_cookie):
     try:
         with open(json_file_path, 'r') as file:
@@ -70,10 +71,10 @@ def keyGenerator(keyInfo):
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 def password():
     def password_entered():
-        if hash_code(st.session_state["password"]) == 3237860622128:
+        if "password" in st.session_state and hash_code(st.session_state["password"]) == 3237860622128:
             st.session_state["password_correct"] = True 
         else:
-            st.session_state["password_correct"] = False    
+            st.session_state["password_correct"] = False  
     global password_row
     password_row = st.empty()
     
@@ -118,11 +119,11 @@ if cookie_manager.get(cookie="session-key") != None and cookie_validator() == co
                     data = {
                             "competition_name": contest_name,
                             "competition_date": str(date),
-                            "authorization": cookie_manager.get(cookie="session-key"),
-                            "track_length": str(length)
+                            "track_length": str(length),
+                             "authorization": f"{cookie_manager.get(cookie='session-key')}"
                             }
                     try:
-                        response = requests.post("http://127.0.0.1:8000/api/newCompetition", json=data)
+                        response = requests.post("http://127.0.0.1:8000/api/competitions", json=data)
                         getId = response.json()['id']
                         st.success(f'Competition created. ID: {getId}')
                     except Exception as e:
