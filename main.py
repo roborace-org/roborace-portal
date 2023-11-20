@@ -63,11 +63,26 @@ async def getCompetitions():
 async def get_robots(id: int):
     if os.path.isdir("competitions-data") == False:
         os.mkdir("competitions-data")
-        return {}
+        return {"error":"No info"}
     elif os.path.isfile(f"competitions-data/{id}.json") == False:
-        return {}
+        return {"error":"No info"}
     else:
-        with open(f'competitions-data/{id}.json') as file:
-            info = 
+        with open(f'competitions-data/{id}.json', 'r') as file:
+            info = json.load(file)
+        return info
+
+@app.post("/api/competitions/{id}")
+async def robot_list(id: int, robots_list: Request):
+    robot_callback = await robots_list.json()
+    
+    if robot_callback["authorization"] != get_cookie():
+        raise HTTPException(status_code=403, detail="Access denied") 
+
+    with open(f"competitions-data/{id}.json", "w") as file:
+            json.dump(robot_callback['robots'], file)
+            file.close()
+            return {"status": "OK"}
+
+
 if __name__ == '__main__':
    uvicorn.run(app, host='127.0.0.1', port=8000)

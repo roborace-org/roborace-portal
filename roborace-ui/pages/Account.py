@@ -5,6 +5,8 @@ import hashlib
 import requests
 import datetime
 import json
+import time
+
 
 json_file_path = 'cookie.json'
 
@@ -70,6 +72,8 @@ def keyGenerator(keyInfo):
 
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 def password():
+    cookie_manager.get_all()
+    time.sleep(1)
     def password_entered():
         if "password" in st.session_state and hash_code(st.session_state["password"]) == 3237860622128:
             st.session_state["password_correct"] = True 
@@ -82,7 +86,7 @@ def password():
             return True
     else:
             password_row.text_input("Password", type="password", on_change=password_entered, key="password")
-    if "password_correct" in st.session_state:
+    if "password_correct" in st.session_state and cookie_manager.get(cookie="session-key") == None:
         try:
             if st.session_state["password_correct"] == True:
                 hashed_session = hashlib.sha256(str(hash_code(st.session_state["password"])).encode('utf-8')).hexdigest()
@@ -100,7 +104,8 @@ def password():
 if not password():
     st.stop()
 
-if cookie_manager.get(cookie="session-key") != None and cookie_validator() == cookie_manager.get(cookie="session-key"):
+if cookie_validator() == cookie_manager.get(cookie="session-key"):
+    print(cookie_manager.get(cookie="session-key"))
     st.write("👋 Hello Admin!")
     chosen_id = stx.tab_bar(data=[
     stx.TabBarItemData(id=1, title="Create competiton", description=""),
