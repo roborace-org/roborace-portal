@@ -5,8 +5,8 @@ import hashlib
 import requests
 import datetime
 import json
+import os
 import time
-
 
 json_file_path = 'cookie.json'
 
@@ -71,9 +71,8 @@ def keyGenerator(keyInfo):
         return keyAlgo
 
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
+cookie_manager.get_all()
 def password():
-    cookie_manager.get_all()
-    time.sleep(1)
     def password_entered():
         if "password" in st.session_state and hash_code(st.session_state["password"]) == 3237860622128:
             st.session_state["password_correct"] = True 
@@ -109,7 +108,7 @@ if cookie_validator() == cookie_manager.get(cookie="session-key"):
     st.write("👋 Hello Admin!")
     chosen_id = stx.tab_bar(data=[
     stx.TabBarItemData(id=1, title="Create competiton", description=""),
-    stx.TabBarItemData(id=2, title="Just a test buttom", description="")
+    stx.TabBarItemData(id=2, title="Log out", description="")
     ], default=2)
     if chosen_id == '1':
             col1raw1, col2raw1, col3raw1, col4raw1 = st.columns([2,2,2,2])
@@ -134,4 +133,9 @@ if cookie_validator() == cookie_manager.get(cookie="session-key"):
                     except Exception as e:
                         st.error(f"Error while processing your request. Error {e}")
     else:
-        st.info(f"{chosen_id=}")
+        st.write("Deletes all sessions and disables write mode for API (until the first login)")
+        if st.button("Log out"):
+            os.remove(json_file_path)
+            cookie_manager.delete("session-key")
+            time.sleep(1)
+            st.rerun()
