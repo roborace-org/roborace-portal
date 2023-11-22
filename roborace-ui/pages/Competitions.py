@@ -62,6 +62,7 @@ if params=={}:
     except:
         st.table()
 else:
+    try:
             request = requests.get(f"http://127.0.0.1:8000/api/competitions/{params['id'][0]}")
             if cookie_manager.get(cookie="session-key") != None and cookie_validator() == cookie_manager.get(cookie="session-key"):
                 st.write("Manage competition")
@@ -75,15 +76,20 @@ else:
                 df_editable = st.data_editor(df,num_rows="dynamic", hide_index=False)
                 if st.button("Send new list"):
                     table_send = df_editable.to_json(orient="records")
-                try:
-                    data = {"authorization": str(cookie_manager.get(cookie="session-key")), "robots": table_send}
-                    request = requests.post(f"http://127.0.0.1:8000/api/competitions/{params['id'][0]}", json=data)
-                except Exception as e:
-                    st.error(f"Error. Info: {e}")
-            if request.json() == {"error": "No info"}:
-                image = Image.open('notfound.jpg')
-                st.image(image, "No-info robot")
+                    try:
+                        data = {"authorization": str(cookie_manager.get(cookie="session-key")), "robots": table_send}
+                        request = requests.post(f"http://127.0.0.1:8000/api/competitions/{params['id'][0]}", json=data)
+                        st.success("Success")
+                    except Exception as e:
+                        st.error(f"Error. Info: {e}")
+
             else:
-                newtable = eval(request.json())
-                df = pd.DataFrame(newtable)
-                st.table(df)
+                if request.json() == {"error": "No info"}:
+                    image = Image.open('notfound.jpg')
+                    st.image(image, "No-info robot")
+                else:
+                    newtable = eval(request.json())
+                    df = pd.DataFrame(newtable)
+                    st.table(df)
+    except:
+        st.error("Error")
