@@ -71,11 +71,11 @@ def keyGenerator(keyInfo):
         return keyAlgo
 
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
-cookie_manager.get_all()
-time.sleep(1)
 def password():
+    cookie_manager.get_all()
+    time.sleep(1)
     def password_entered():
-        if "password" in st.session_state and hash_code(st.session_state["password"]) == 3237860622128:
+        if hash_code(st.session_state["password"]) == 3237860622128:
             st.session_state["password_correct"] = True 
         else:
             st.session_state["password_correct"] = False  
@@ -90,10 +90,11 @@ def password():
         try:
             if st.session_state["password_correct"] == True:
                 hashed_session = hashlib.sha256(str(hash_code(st.session_state["password"])).encode('utf-8')).hexdigest()
-                new_cookie = keyGenerator(hashed_session)
-                cookie_manager.set("session-key", new_cookie)
+                new_cookie = keyGenerator(hashed_session) 
                 password_row.empty()
-                del st.session_state["password"]
+                cookie_manager.set("session-key", new_cookie)
+                time.sleep(1)
+                print(cookie_manager.get(cookie="sesison-key"))
                 cookie_rewriter(cookie_manager.get(cookie="session-key")) 
                 return True
             else:
