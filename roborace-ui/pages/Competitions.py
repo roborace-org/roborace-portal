@@ -92,9 +92,9 @@ else:
                     try:
                         current_table = competition_editable_table.to_dict(orient="records")
                         for record in current_table:
-                            record["Time 1"] = 0.01
-                            record["Time 2"] = 0.01
-                            record["Time 3"] = 0.01
+                            record["Time 1"] = 0.00
+                            record["Time 2"] = 0.00
+                            record["Time 3"] = 0.00
                         df = pd.DataFrame.from_records(current_table)
                         time_table = df_editable.data_editor(df, num_rows="dynamic", hide_index=False)
                         table_send = time_table.to_json(orient="records")
