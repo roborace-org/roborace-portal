@@ -72,6 +72,7 @@ def keyGenerator(keyInfo):
 
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 cookie_manager.get_all()
+time.sleep(1)
 def password():
     def password_entered():
         if "password" in st.session_state and hash_code(st.session_state["password"]) == 3237860622128:
@@ -104,7 +105,6 @@ if not password():
     st.stop()
 
 if cookie_validator() == cookie_manager.get(cookie="session-key"):
-    print(cookie_manager.get(cookie="session-key"))
     st.write("👋 Hello Admin!")
     chosen_id = stx.tab_bar(data=[
     stx.TabBarItemData(id=1, title="Create competiton", description=""),

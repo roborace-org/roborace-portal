@@ -69,6 +69,8 @@ async def get_robots(id: int):
     else:
         with open(f'competitions-data/{id}.json', 'r') as file:
             info = json.load(file)
+            if info == "[]":
+                info = {"error": "No info"}
         return info
 
 @app.post("/api/competitions/{id}")
