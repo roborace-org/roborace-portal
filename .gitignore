@@ -1,0 +1,5 @@
+roborace-ui/cookie.json
+competitions.json
+.env
+__pycache__/
+roborace-ui/__pycache__/
