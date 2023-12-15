@@ -45,7 +45,6 @@ cookie_manager.get_all()
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 params = st.experimental_get_query_params()
 if params=={}:
-    try:
         table = requests.get("http://127.0.0.1:8000/api/competitions")
         table = table.json()
         reformated_table = []
@@ -62,8 +61,6 @@ if params=={}:
 
         md_table = df.to_markdown()
         st.markdown(md_table)
-    except:
-        st.table()
 else:
 
             request = requests.get(f"http://127.0.0.1:8000/api/competitions/{params['id'][0]}")
@@ -92,9 +89,9 @@ else:
                     try:
                         current_table = competition_editable_table.to_dict(orient="records")
                         for record in current_table:
-                            record["Qualification"]["Time 1"] = 0.00
-                            record["Qualification"]["Time 2"] = 0.00
-                            record["Qualification"]["Time 3"] = 0.00
+                            record["Qualification time 1"] = 0.00
+                            record["Qualification time 2"] = 0.00
+                            record["Qualification time 3"] = 0.00
                         df = pd.DataFrame.from_records(current_table)
                         time_table = df_editable.data_editor(df, num_rows="dynamic", hide_index=False)
                         table_send = time_table.to_json(orient="records")
@@ -125,14 +122,14 @@ else:
 
                                 best_times = []
 
-                                if 'Time 1' in df.columns:
-                                    best_times.append(df['Time 1'])
+                                if 'Qualification time 1' in df.columns:
+                                    best_times.append(df['Qualification time 1'])
 
-                                if 'Time 2' in df.columns:
-                                    best_times.append(df['Time 2'])
+                                if 'Qualification time 2' in df.columns:
+                                    best_times.append(df['Qualification time 2'])
 
-                                if 'Time 3' in df.columns:
-                                    best_times.append(df['Time 3'])
+                                if 'Qualification time 3' in df.columns:
+                                    best_times.append(df['Qualification time 3'])
 
                                 best_times_array = np.array(best_times)
                                 best_times_array[best_times_array == 0] = np.nan

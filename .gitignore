@@ -3,3 +3,4 @@ competitions.json
 .env
 __pycache__/
 roborace-ui/__pycache__/
+competitions-data/

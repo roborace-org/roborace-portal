@@ -4,3 +4,4 @@ aiomysql
 streamlit
 requests
 extra-streamlit-components
+tabulate
