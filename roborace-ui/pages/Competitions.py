@@ -11,6 +11,7 @@ json_file_path = 'cookie.json'
 false = "No"
 true = "Yes"
 null = "Unknown"
+strike = '-'
 
 def cookie_validator():
     try:
@@ -126,9 +127,8 @@ else:
 
                         for col_name in ['Qualification time 1', 'Qualification time 2', 'Qualification time 3']:
                             if col_name in df.columns:
-                                df[col_name] = np.maximum(0, df[col_name])
-                                best_times.append(df[col_name])
-
+                                    non_negative_times = df[col_name].clip(lower=0)
+                                    best_times.append(non_negative_times)
                         best_times_array = np.array(best_times)
                         best_times_array[best_times_array == 0] = np.nan
 
@@ -151,7 +151,7 @@ else:
 
                         for col_name in ['Qualification time 1', 'Qualification time 2', 'Qualification time 3']:
                             if col_name in df.columns:
-                                df[col_name] = df[col_name].apply(lambda x: f"({x})" if x > track_length * 2 else "" if x == 0 else x)
+                                df[col_name] = df[col_name].apply(lambda x: f"({x})" if x > track_length * 2 else "" if x == 0 else '-' if x < 0 else x)
 
                         competition_table.table(df)
 
@@ -162,8 +162,9 @@ else:
                         if 'Qualification time 3' in df.columns:
                             time_3_values = df['Qualification time 3'].values
                         time.sleep(4)
-                    except:
-                        newtable = json.loads(str(new_request.json()))                            
+                    except Exception as e:
+                        print(e)
+                        ewtable = json.loads(str(new_request.json()))                            
                         df = pd.DataFrame(newtable)
                         competition_table.table(df)
                 else:
