@@ -12,9 +12,14 @@ cookie_manager = get_manager()
 
 hide_streamlit_style = """
 <style>
+@import url('https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@900&display=swap');
+html, body, head, div, p, table, [class*="css"] {
+    font-family: 'Roboto Condensed', black; 
+    font-size: 18px;
+    font-weight: 500;
+}
 #MainMenu {visibility: hidden;}
 footer {visibility: hidden;}
-
 </style>
 """
 

@@ -28,6 +28,12 @@ def cookie_validator():
 
 hide_streamlit_style = """
 <style>
+@import url('https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@900&display=swap');
+html, body, head, div, p, table, [class*="css"] {
+    font-family: 'Roboto Condensed', black; 
+    font-size: 18px;
+    font-weight: 500;
+}
 #MainMenu {visibility: hidden;}
 footer {visibility: hidden;}
 </style>
@@ -75,7 +81,7 @@ else:
         competition_editable_table = df_editable.data_editor(df, num_rows="dynamic", hide_index=False)
         
         if "Qualification time 1" in competition_editable_table.columns:
-            e = st.number_input('Number of races', min_value=0, step=1)
+            race_numbers = st.number_input('Number of races', min_value=0, step=1)
         
         if st.button("Send new list"):
             table_send = competition_editable_table.to_json(orient="records")
