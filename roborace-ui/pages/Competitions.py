@@ -13,6 +13,12 @@ true = "Yes"
 null = "Unknown"
 strike = '-'
 
+def convert_seconds_to_custom_format(seconds):
+    minutes = seconds // 60
+    remaining_seconds = seconds % 60 / 10
+    formated_time = minutes + remaining_seconds
+    return formated_time
+
 def cookie_validator():
     try:
         with open(json_file_path, 'r') as file:
@@ -48,6 +54,32 @@ cookie_manager.get_all()
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 params = st.experimental_get_query_params()
 
+# Инициализация session_state, если это еще не сделано
+if 'race_numbers' not in st.session_state:
+    st.session_state.race_numbers = 0
+    st.session_state.df = pd.DataFrame()
+
+# Функция для обновления количества гонок и структуры DataFrame
+def update_race_numbers():
+    race_numbers = st.session_state.race_numbers_input
+    # Если количество гонок изменилось, обновляем DataFrame
+    if race_numbers != st.session_state.race_numbers:
+        df = st.session_state.df.copy()
+        # Удаляем старые столбцы заездов
+        for i in range(1, st.session_state.race_numbers + 1):
+            df.drop([f'Race {i} Position', f'Race {i} Place', f'Race {i} Laps', f'Race {i} Time'], axis=1, inplace=True, errors='ignore')
+        # Добавляем новые столбцы заездов
+        for i in range(1, race_numbers + 1):
+            df[f'Race {i} Position'] = np.nan
+            df[f'Race {i} Place'] = np.nan
+            df[f'Race {i} Laps'] = np.nan
+            df[f'Race {i} Time'] = np.nan
+        # Обновляем session_state
+        st.session_state.race_numbers = race_numbers
+        st.session_state.df = df
+        st.rerun()
+        
+
 if params == {}:
     table = requests.get("http://127.0.0.1:8000/api/competitions").json()
     reformated_table = [
@@ -62,27 +94,32 @@ if params == {}:
     df = pd.DataFrame(reformated_table).set_index('ID')
     md_table = df.to_markdown()
     st.markdown(md_table)
-
 else:
     request = requests.get(f"http://127.0.0.1:8000/api/competitions/{params['id'][0]}")
-    
     if cookie_manager.get(cookie="session-key") is not None and cookie_validator() == cookie_manager.get(cookie="session-key"):
         st.write("Manage competition")
-        
         if request.json() == {"error": "No info"}:
-            df = pd.DataFrame([{"Name": "", 'Is Allowed?': False}])
+            st.session_state.df = pd.DataFrame([{"Name": "", 'Is Allowed?': False}])
         else:
-            false = False
-            true = True
-            null = None
-            df = pd.DataFrame(json.loads(str(request.json())))
-
+            if st.session_state.df.empty:
+                st.session_state.df = pd.DataFrame(json.loads(str(request.json())))
+        
+        # Получаем количество гонок от пользователя и обновляем session_state
+        race_numbers = st.number_input(
+            'Number of races', 
+            min_value=0, 
+            step=1, 
+            key='race_numbers_input', 
+            on_change=update_race_numbers,
+            value=st.session_state.race_numbers  # Устанавливаем текущее значение
+        )
+        
+        
+        
+        # Создаем редактируемую таблицу с использованием DataFrame из session_state
         df_editable = st.empty()
-        competition_editable_table = df_editable.data_editor(df, num_rows="dynamic", hide_index=False)
-        
-        if "Qualification time 1" in competition_editable_table.columns:
-            race_numbers = st.number_input('Number of races', min_value=0, step=1)
-        
+        competition_editable_table = df_editable.data_editor(st.session_state.df, num_rows="dynamic", hide_index=False)
+
         if st.button("Send new list"):
             table_send = competition_editable_table.to_json(orient="records")
             try:
@@ -93,7 +130,7 @@ else:
                 st.rerun()
             except Exception as e:
                 st.error(f"Error. Info: {e}")
-
+        
         if st.button("Rank mode"):
             try:
                 current_table = competition_editable_table.to_dict(orient="records")
@@ -120,10 +157,18 @@ else:
             competition_table = st.empty()
             table = requests.get("http://127.0.0.1:8000/api/competitions").json()
             track_length = table[int(params['id'][0]) - 1]['track_length']
-            
+            if st.button("Presentation mode"):
+                            table_style = """
+                            <style>
+                            table, th, td {
+                                font-size:140%;
+                            }
+                            </style>
+                            """
+                            st.markdown(table_style, unsafe_allow_html=True)
             while True:
                 new_request = requests.get(f"http://127.0.0.1:8000/api/competitions/{params['id'][0]}")
-
+                
                 if new_request.json() != {"error": "No info"}:
                     try:
                         newtable = list(eval(new_request.json()))
@@ -138,8 +183,7 @@ else:
                         best_times_array = np.array(best_times)
                         best_times_array[best_times_array == 0] = np.nan
 
-                        df['Best Time'] = np.nanmin(best_times_array, axis=0)
-
+                        df['Best Time'] = np.nanmin(best_times_array, axis=0)  
                         df.loc[df['Best Time'] > track_length * 2, 'Best Time'] = np.nan
 
                         if np.isnan(df['Best Time']).all():
@@ -151,7 +195,7 @@ else:
                             limit_time = track_length * 2
 
                         df['Score'] = np.where(df['Best Time'] == 0, 0, 10 - 10 * (df['Best Time'] - best_time) / (limit_time - best_time))
-                        df['Score'] = np.where(df['Score'] < 0, 0, df['Score'].round(2))
+                        df['Score'] = np.where(df['Score'] < 0, 0, df['Score'].round())
                         df = df.sort_values(by='Best Time')
                         df['Place'] = np.arange(1, len(df) + 1)
 
@@ -173,5 +217,6 @@ else:
                         ewtable = json.loads(str(new_request.json()))                            
                         df = pd.DataFrame(newtable)
                         competition_table.table(df)
+                        time.sleep(4)
                 else:
                     st.rerun()
