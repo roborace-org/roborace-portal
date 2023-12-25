@@ -54,27 +54,25 @@ cookie_manager.get_all()
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 params = st.experimental_get_query_params()
 
-# Инициализация session_state, если это еще не сделано
 if 'race_numbers' not in st.session_state:
     st.session_state.race_numbers = 0
     st.session_state.df = pd.DataFrame()
 
-# Функция для обновления количества гонок и структуры DataFrame
 def update_race_numbers():
     race_numbers = st.session_state.race_numbers_input
-    # Если количество гонок изменилось, обновляем DataFrame
+    
     if race_numbers != st.session_state.race_numbers:
         df = st.session_state.df.copy()
-        # Удаляем старые столбцы заездов
+
         for i in range(1, st.session_state.race_numbers + 1):
             df.drop([f'Race {i} Position', f'Race {i} Place', f'Race {i} Laps', f'Race {i} Time'], axis=1, inplace=True, errors='ignore')
-        # Добавляем новые столбцы заездов
+
         for i in range(1, race_numbers + 1):
-            df[f'Race {i} Position'] = np.nan
-            df[f'Race {i} Place'] = np.nan
-            df[f'Race {i} Laps'] = np.nan
-            df[f'Race {i} Time'] = np.nan
-        # Обновляем session_state
+            df[f'Race {i} Position'] = 0
+            df[f'Race {i} Place'] = 0
+            df[f'Race {i} Laps'] = 0
+            df[f'Race {i} Time'] = ""
+
         st.session_state.race_numbers = race_numbers
         st.session_state.df = df
         st.rerun()
@@ -104,19 +102,17 @@ else:
             if st.session_state.df.empty:
                 st.session_state.df = pd.DataFrame(json.loads(str(request.json())))
         
-        # Получаем количество гонок от пользователя и обновляем session_state
         race_numbers = st.number_input(
             'Number of races', 
             min_value=0, 
             step=1, 
             key='race_numbers_input', 
             on_change=update_race_numbers,
-            value=st.session_state.race_numbers  # Устанавливаем текущее значение
+            value=st.session_state.race_numbers
         )
         
         
         
-        # Создаем редактируемую таблицу с использованием DataFrame из session_state
         df_editable = st.empty()
         competition_editable_table = df_editable.data_editor(st.session_state.df, num_rows="dynamic", hide_index=False)
 
@@ -161,7 +157,7 @@ else:
                             table_style = """
                             <style>
                             table, th, td {
-                                font-size:140%;
+                                font-size:120%;
                             }
                             </style>
                             """
@@ -199,10 +195,17 @@ else:
                         df = df.sort_values(by='Best Time')
                         df['Place'] = np.arange(1, len(df) + 1)
 
+
                         for col_name in ['Qualification time 1', 'Qualification time 2', 'Qualification time 3']:
                             if col_name in df.columns:
                                 df[col_name] = df[col_name].apply(lambda x: f"({x})" if x > track_length * 2 else "" if x == 0 else '-' if x < 0 else x)
-
+                        
+                        columns = df.columns.tolist() 
+                        place_index = columns.index('Place') + 1
+                        race_columns = [col for col in columns if col.startswith('Race')]
+                        columns = [col for col in columns if not col.startswith('Race')] 
+                        new_order = columns[:place_index] + race_columns + columns[place_index:]
+                        df = df[new_order]
                         competition_table.table(df)
 
                         if 'Qualification time 1' in df.columns:
