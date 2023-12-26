@@ -176,6 +176,7 @@ else:
                             if col_name in df.columns:
                                     non_negative_times = df[col_name].clip(lower=0)
                                     best_times.append(non_negative_times)
+                        
                         best_times_array = np.array(best_times)
                         best_times_array[best_times_array == 0] = np.nan
 
@@ -206,6 +207,16 @@ else:
                         columns = [col for col in columns if not col.startswith('Race')] 
                         new_order = columns[:place_index] + race_columns + columns[place_index:]
                         df = df[new_order]
+                        race_columns_present = any("race" in col.lower() for col in df.columns)
+ 
+                        if race_columns_present:
+                            race_laps_columns = [col for col in df.columns if col.startswith('Race') and col.endswith('Laps')] 
+                            df['Max Laps'] = df[race_laps_columns].max(axis=1)
+                            max_laps = df['Max Laps'].max()
+                            df['Race Score'] = df['Max Laps'].apply(lambda laps: 10 * laps / max_laps).round(2)
+                            if 'Race Score' in df.columns:
+                                df = df.sort_values(by='Race Score', ascending=False)
+                             
                         competition_table.table(df)
 
                         if 'Qualification time 1' in df.columns:
@@ -217,7 +228,7 @@ else:
                         time.sleep(4)
                     except Exception as e:
                         print(e)
-                        ewtable = json.loads(str(new_request.json()))                            
+                        newtable = json.loads(str(new_request.json()))                            
                         df = pd.DataFrame(newtable)
                         competition_table.table(df)
                         time.sleep(4)
