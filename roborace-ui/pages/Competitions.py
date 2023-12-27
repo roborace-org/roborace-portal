@@ -72,7 +72,10 @@ def update_race_numbers():
             df[f'Race {i} Place'] = 0
             df[f'Race {i} Laps'] = 0
             df[f'Race {i} Time'] = ""
-
+        df['Final Position'] = 0
+        df['Final Place'] = 0
+        df['Final Laps'] = 0
+        df['Final Time'] = ""
         st.session_state.race_numbers = race_numbers
         st.session_state.df = df
         st.rerun()
@@ -214,9 +217,27 @@ else:
                             df['Max Laps'] = df[race_laps_columns].max(axis=1)
                             max_laps = df['Max Laps'].max()
                             df['Race Score'] = df['Max Laps'].apply(lambda laps: 10 * laps / max_laps).round(2)
+                            
                             if 'Race Score' in df.columns:
                                 df = df.sort_values(by='Race Score', ascending=False)
-                             
+                            try:
+                                columns = df.columns.tolist()  
+                                race_score_index = columns.index('Race Score') + 1
+                                final_columns = ['Final Position', 'Final Place', 'Final Laps', 'Final Time']
+                                columns = [col for col in columns if col not in final_columns]
+                                new_order = columns[:race_score_index] + final_columns + columns[race_score_index:]
+                                df = df[new_order]
+                                points_mapping = {1: 180,2: 100,3: 60,4: 40,5: 20,  6: 0}
+                                def calculate_points(position):
+                                    return points_mapping.get(position, 0)
+                                df['Final Score'] = df['Final Position'].apply(calculate_points)
+                                score_columns = [col for col in df.columns if 'Score' in col]
+                                df['Total Score'] = df[score_columns].sum(axis=1)
+                                df = df.sort_values(by='Total Score', ascending=False)
+                            except Exception as e:
+                                print(e)
+
+                        
                         competition_table.table(df)
 
                         if 'Qualification time 1' in df.columns:
