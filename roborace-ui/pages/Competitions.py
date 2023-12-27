@@ -12,6 +12,7 @@ false = "No"
 true = "Yes"
 null = "Unknown"
 strike = '-'
+presentation_mode = False
 
 def convert_seconds_to_custom_format(seconds):
     minutes = seconds // 60
@@ -157,10 +158,13 @@ else:
             table = requests.get("http://127.0.0.1:8000/api/competitions").json()
             track_length = table[int(params['id'][0]) - 1]['track_length']
             if st.button("Presentation mode"):
+                            presentation_mode = True
                             table_style = """
                             <style>
                             table, th, td {
-                                font-size:120%;
+                                font-size:140%;
+                                width: 100%;
+                                height: 100%
                             }
                             </style>
                             """
@@ -237,7 +241,9 @@ else:
                             except Exception as e:
                                 print(e)
 
-                        
+                        if presentation_mode == True:
+                            score_columns = [col for col in df.columns if 'Score' in col]
+                            df.drop(score_columns, axis=1, inplace=True) 
                         competition_table.table(df)
 
                         if 'Qualification time 1' in df.columns:
