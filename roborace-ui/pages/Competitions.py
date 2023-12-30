@@ -1,9 +1,9 @@
 import streamlit as st
 import requests
-import pandas as pd
 from PIL import Image
 import json
 import extra_streamlit_components as stx
+import pandas as pd
 import time
 import numpy as np
 
@@ -12,7 +12,18 @@ false = "No"
 true = "Yes"
 null = "Unknown"
 strike = '-'
-presentation_mode = False
+hide_streamlit_style = """
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@900&display=swap');
+html, body, head, div, p, table, [class*="css"] {
+    font-family: 'Roboto Condensed', black; 
+    font-size: 18px;
+    font-weight: 500;
+}
+#MainMenu {visibility: hidden;}
+footer {visibility: hidden;}
+</style>
+"""
 
 def convert_seconds_to_custom_format(seconds):
     minutes = seconds // 60
@@ -33,18 +44,6 @@ def cookie_validator():
             new_file.write(json.dumps({}))
         return False
 
-hide_streamlit_style = """
-<style>
-@import url('https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@900&display=swap');
-html, body, head, div, p, table, [class*="css"] {
-    font-family: 'Roboto Condensed', black; 
-    font-size: 18px;
-    font-weight: 500;
-}
-#MainMenu {visibility: hidden;}
-footer {visibility: hidden;}
-</style>
-"""
 
 @st.cache_resource(experimental_allow_widgets=True)
 def get_manager():
@@ -163,7 +162,6 @@ else:
             table = requests.get("http://127.0.0.1:8000/api/competitions").json()
             track_length = table[int(params['id'][0]) - 1]['track_length']
             if st.button("Presentation mode"):
-                            presentation_mode = True
                             table_style = """
                             <style>
                             table, th, td {
