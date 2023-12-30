@@ -92,9 +92,12 @@ if params == {}:
             "Link": f"[Browse this competition](?id={entry['id']})"
         } for entry in table
     ]
-    df = pd.DataFrame(reformated_table).set_index('ID')
-    md_table = df.to_markdown()
-    st.markdown(md_table)
+    try:
+        df = pd.DataFrame(reformated_table).set_index('ID')
+        md_table = df.to_markdown()
+        st.markdown(md_table)
+    except:
+        st.table()
 else:
     request = requests.get(f"http://127.0.0.1:8000/api/competitions/{params['id'][0]}")
     if cookie_manager.get(cookie="session-key") is not None and cookie_validator() == cookie_manager.get(cookie="session-key"):
