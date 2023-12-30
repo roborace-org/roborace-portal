@@ -255,7 +255,7 @@ else:
                         race_table.table(df_race)
                         final_table.table(df_final)
                         try:
-                            score_columns = ['Name', 'Is Available'] + [col for col in df.columns if 'Score' in col]
+                            score_columns = ['Name', 'Is Allowed?'] + [col for col in df.columns if 'Score' in col]
                             df_score_sum = df[score_columns]
                             st.text("Score")
                             results_table.table(df_score_sum)
