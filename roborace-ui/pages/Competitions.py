@@ -273,7 +273,7 @@ else:
                             time_3_values = df['Qualification time 3'].values
                         time.sleep(4)
                     except Exception as e:
-                        pr  
+                        print(e)
                         newtable = json.loads(str(new_request.json()))                            
                         df = pd.DataFrame(newtable)
                         competition_table.table(df)
