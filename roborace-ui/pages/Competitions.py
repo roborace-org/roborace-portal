@@ -242,22 +242,28 @@ else:
                                 print(e)
 
                         qualification_columns = ['Name', 'Is Allowed?', 'Qualification time 1', 'Qualification time 2', 'Qualification time 3']
-                        race_columns = ['Name', 'Is Allowed?'] + [col for col in df.columns if col.startswith('Race')]
+                        
                         final_columns = ['Name', 'Is Allowed?', 'Final Position', 'Final Place', 'Final Laps', 'Final Time']
                         
 
                         df_qualification = df[qualification_columns]
-                        df_race = df[race_columns]
                         df_final = df[final_columns]
                         
-
                         qualification_table.table(df_qualification)
-                        race_table.table(df_race)
+
+                        try:
+                            race_columns = ['Name', 'Is Allowed?'] + [col for col in df.columns if col.startswith('Race')]
+                            df_race = df[race_columns]
+                            race_table.table(df_race)
+                        except:
+                            pass
                         final_table.table(df_final)
-                        
-                        score_columns = ['Name', 'Is Allowed?'] + [col for col in df.columns if 'Score' in col]
-                        df_score_sum = df[score_columns]
-                        results_table.table(df_score_sum)
+                        try:
+                            score_columns = ['Name', 'Is Allowed?'] + [col for col in df.columns if 'Score' in col]
+                            df_score_sum = df[score_columns]
+                            results_table.table(df_score_sum)
+                        except:
+                            pass
                         
 
                         if 'Qualification time 1' in df.columns:
