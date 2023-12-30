@@ -241,9 +241,9 @@ else:
                             except Exception as e:
                                 print(e)
 
-                        qualification_columns = ['Name', 'Is Available', 'Qualification time 1', 'Qualification time 2', 'Qualification time 3']
-                        race_columns = ['Name', 'Is Available'] + [col for col in df.columns if col.startswith('Race')]
-                        final_columns = ['Name', 'Is Available', 'Final Position', 'Final Place', 'Final Laps', 'Final Time']
+                        qualification_columns = ['Name', 'Is Allowed', 'Qualification time 1', 'Qualification time 2', 'Qualification time 3']
+                        race_columns = ['Name', 'Is Allowed'] + [col for col in df.columns if col.startswith('Race')]
+                        final_columns = ['Name', 'Is Allowed', 'Final Position', 'Final Place', 'Final Laps', 'Final Time']
                         
 
                         df_qualification = df[qualification_columns]
