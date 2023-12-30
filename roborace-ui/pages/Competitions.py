@@ -166,7 +166,7 @@ else:
                             <style>
                             table, th, td {
                                 font-size:140%;
-                                width: 100%;
+                                width: 100%;    
                                 height: 100%
                             }
                             </style>
@@ -241,7 +241,7 @@ else:
 
                         qualification_columns = ['Name', 'Is Allowed?', 'Qualification time 1', 'Qualification time 2', 'Qualification time 3']
                         
-                        final_columns = ['Name', 'Is Allowed?', 'Final Position', 'Final Place', 'Final Laps', 'Final Time']
+                        final_columns = ['Name', 'Final Position', 'Final Place', 'Final Laps', 'Final Time']
                         
 
                         df_qualification = df[qualification_columns]
@@ -250,14 +250,14 @@ else:
                         qualification_table.table(df_qualification)
 
                         try:
-                            race_columns = ['Name', 'Is Allowed?'] + [col for col in df.columns if col.startswith('Race')]
+                            race_columns = ['Name'] + [col for col in df.columns if col.startswith('Race')]
                             df_race = df[race_columns]
                             race_table.table(df_race)
                         except:
                             pass
                         final_table.table(df_final)
                         try:
-                            score_columns = ['Name', 'Is Allowed?'] + [col for col in df.columns if 'Score' in col]
+                            score_columns = ['Name'] + [col for col in df.columns if 'Score' in col]
                             df_score_sum = df[score_columns]
                             results_table.table(df_score_sum)
                         except:
