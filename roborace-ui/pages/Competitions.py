@@ -154,6 +154,7 @@ else:
             time.sleep(4)
             st.rerun()
         else:
+            competition_table = st.empty()
             qualification_table = st.empty()
             race_table = st.empty()
             final_table = st.empty()
