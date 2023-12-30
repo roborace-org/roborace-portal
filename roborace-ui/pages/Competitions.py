@@ -231,7 +231,7 @@ else:
                                 df = df.sort_values(by='Race Score', ascending=False)
                             try:
                                 columns = df.columns.tolist()  
-                                racqualification_ts_mapping = {1: 180,2: 100,3: 60,4: 40,5: 20,  6: 0}
+                                points_mapping = {1: 180,2: 100,3: 60,4: 40,5: 20,  6: 0}
                                 def calculate_points(position):
                                     return points_mapping.get(position, 0)
                                 df['Final Score'] = df['Final Position'].apply(calculate_points)
