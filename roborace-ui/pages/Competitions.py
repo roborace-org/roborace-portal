@@ -251,11 +251,8 @@ else:
                         df_final = df[final_columns]
                         
 
-                        st.text("Qualification")
                         qualification_table.table(df_qualification)
-                        st.text("Race")
                         race_table.table(df_race)
-                        st.text("Final")
                         final_table.table(df_final)
                         try:
                             score_columns = ['Name', 'Is Available'] + [col for col in df.columns if 'Score' in col]
