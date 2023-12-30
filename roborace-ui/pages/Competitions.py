@@ -244,12 +244,12 @@ else:
                         qualification_columns = ['Name', 'Is Available', 'Qualification time 1', 'Qualification time 2', 'Qualification time 3']
                         race_columns = ['Name', 'Is Available'] + [col for col in df.columns if col.startswith('Race')]
                         final_columns = ['Name', 'Is Available', 'Final Position', 'Final Place', 'Final Laps', 'Final Time']
-                        score_columns = ['Name', 'Is Available'] + [col for col in df.columns if 'Score' in col]
+                        
 
                         df_qualification = df[qualification_columns]
                         df_race = df[race_columns]
                         df_final = df[final_columns]
-                        df_score_sum = df[score_columns]
+                        
 
                         st.text("Qualification")
                         qualification_table.table(df_qualification)
@@ -257,8 +257,13 @@ else:
                         race_table.table(df_race)
                         st.text("Final")
                         final_table.table(df_final)
-                        st.text("Score")
-                        results_table.table(df_score_sum)
+                        try:
+                            score_columns = ['Name', 'Is Available'] + [col for col in df.columns if 'Score' in col]
+                            df_score_sum = df[score_columns]
+                            st.text("Score")
+                            results_table.table(df_score_sum)
+                        except:
+                            pass
 
                         if 'Qualification time 1' in df.columns:
                             time_1_values = df['Qualification time 1'].values
@@ -268,7 +273,7 @@ else:
                             time_3_values = df['Qualification time 3'].values
                         time.sleep(4)
                     except Exception as e:
-                        print(e)
+                        pr  
                         newtable = json.loads(str(new_request.json()))                            
                         df = pd.DataFrame(newtable)
                         competition_table.table(df)
