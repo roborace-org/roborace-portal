@@ -257,7 +257,6 @@ else:
                         try:
                             score_columns = ['Name', 'Is Allowed?'] + [col for col in df.columns if 'Score' in col]
                             df_score_sum = df[score_columns]
-                            st.text("Score")
                             results_table.table(df_score_sum)
                         except:
                             pass
