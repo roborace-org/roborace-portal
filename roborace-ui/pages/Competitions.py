@@ -254,12 +254,11 @@ else:
                         qualification_table.table(df_qualification)
                         race_table.table(df_race)
                         final_table.table(df_final)
-                        try:
-                            score_columns = ['Name', 'Is Allowed?'] + [col for col in df.columns if 'Score' in col]
-                            df_score_sum = df[score_columns]
-                            results_table.table(df_score_sum)
-                        except:
-                            pass
+                        
+                        score_columns = ['Name', 'Is Allowed?'] + [col for col in df.columns if 'Score' in col]
+                        df_score_sum = df[score_columns]
+                        results_table.table(df_score_sum)
+                        
 
                         if 'Qualification time 1' in df.columns:
                             time_1_values = df['Qualification time 1'].values
