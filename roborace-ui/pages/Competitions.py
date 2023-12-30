@@ -154,7 +154,11 @@ else:
             time.sleep(4)
             st.rerun()
         else:
-            competition_table = st.empty()
+            qualification_table = st.empty()
+            race_table = st.empty()
+            final_table = st.empty()
+            results_table = st.empty()
+            
             table = requests.get("http://127.0.0.1:8000/api/competitions").json()
             track_length = table[int(params['id'][0]) - 1]['track_length']
             if st.button("Presentation mode"):
@@ -226,12 +230,7 @@ else:
                                 df = df.sort_values(by='Race Score', ascending=False)
                             try:
                                 columns = df.columns.tolist()  
-                                race_score_index = columns.index('Race Score') + 1
-                                final_columns = ['Final Position', 'Final Place', 'Final Laps', 'Final Time']
-                                columns = [col for col in columns if col not in final_columns]
-                                new_order = columns[:race_score_index] + final_columns + columns[race_score_index:]
-                                df = df[new_order]
-                                points_mapping = {1: 180,2: 100,3: 60,4: 40,5: 20,  6: 0}
+                                racqualification_ts_mapping = {1: 180,2: 100,3: 60,4: 40,5: 20,  6: 0}
                                 def calculate_points(position):
                                     return points_mapping.get(position, 0)
                                 df['Final Score'] = df['Final Position'].apply(calculate_points)
@@ -241,10 +240,24 @@ else:
                             except Exception as e:
                                 print(e)
 
-                        if presentation_mode == True:
-                            score_columns = [col for col in df.columns if 'Score' in col]
-                            df.drop(score_columns, axis=1, inplace=True) 
-                        competition_table.table(df)
+                        qualification_columns = ['Name', 'Is Available', 'Qualification time 1', 'Qualification time 2', 'Qualification time 3']
+                        race_columns = ['Name', 'Is Available'] + [col for col in df.columns if col.startswith('Race')]
+                        final_columns = ['Name', 'Is Available', 'Final Position', 'Final Place', 'Final Laps', 'Final Time']
+                        score_columns = ['Name', 'Is Available'] + [col for col in df.columns if 'Score' in col]
+
+                        df_qualification = df[qualification_columns]
+                        df_race = df[race_columns]
+                        df_final = df[final_columns]
+                        df_score_sum = df[score_columns]
+
+                        st.text("Qualification")
+                        qualification_table.table(df_qualification)
+                        st.text("Race")
+                        race_table.table(df_race)
+                        st.text("Final")
+                        final_table.table(df_final)
+                        st.text("Score")
+                        results_table.table(df_score_sum)
 
                         if 'Qualification time 1' in df.columns:
                             time_1_values = df['Qualification time 1'].values
