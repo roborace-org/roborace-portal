@@ -6,6 +6,7 @@ import extra_streamlit_components as stx
 import pandas as pd
 import time
 import numpy as np
+from streamlit_js_eval import streamlit_js_eval
 
 json_file_path = 'cookie.json'
 false = "No"
@@ -146,6 +147,7 @@ else:
                 table_send = time_table.to_json(orient="records")
                 data = {"authorization": str(cookie_manager.get(cookie="session-key")), "robots": table_send}
                 request = requests.post(f"http://127.0.0.1:8000/api/competitions/{params['id'][0]}", json=data)
+
                 streamlit_js_eval(js_expressions="parent.window.location.reload()")
             except:
                 pass
