@@ -5,3 +5,4 @@ streamlit
 requests
 extra-streamlit-components
 tabulate
+streamlit_js_eval
