@@ -1,77 +1,90 @@
 from fastapi import FastAPI, Request, HTTPException
 import os
-import aiomysql
-from dotenv import load_dotenv
-from auth_hash import *
-from contextlib import asynccontextmanager
+import json
 import uvicorn
 
-@asynccontextmanager
-async def create_pool(app: FastAPI):
-    load_dotenv()
-    try:
-        global racedb_pool
-        
-        conn = await aiomysql.connect(
-            host=os.environ["mysql_server"],
-            user=os.environ["mysql_login"],
-            password=os.environ["mysql_pass"]
-        )
-        
-        async with conn.cursor() as cursor:
-            
-            await cursor.execute("CREATE DATABASE IF NOT EXISTS RaceDB")
-            
-            await cursor.execute("USE RaceDB")
-        
-        racedb_pool = await aiomysql.create_pool(
-                host=os.environ["mysql_server"],
-                user=os.environ["mysql_login"],
-                password=os.environ["mysql_pass"],
-                db="RaceDB"
-        )
-        
-        print("Connected to the database")
+app = FastAPI()
 
-        app.state.db = racedb_pool
-    
-    except Exception as e:
-       print("Error:", e)
-       exit()
-    
-    yield
-    
-    if racedb_pool:
-      racedb_pool.close()
-      await racedb_pool.wait_closed()
+def get_cookie():
+    cookie_file = "roborace-ui/cookie.json"
+    with open(cookie_file, "r") as file:
+        data = json.load(file)
+        try:
+            cookie_info = data['cookie_info']
+            return cookie_info
+        except:
+            return False
+        file.close()
 
-
-app = FastAPI(lifespan=create_pool)
-
-
-@app.post("/api/newCompetition")
+@app.post("/api/competitions")
 async def create_contest(competition: Request):
    competition_info = await competition.json()
    
-   if hash_code(competition_info["authorization"]) != 3237860622128:
-       raise HTTPException(status_code=403, detail="Access denied")
+   if competition_info["authorization"] != get_cookie():
+    raise HTTPException(status_code=403, detail="Access denied")
 
-   async with app.state.db.acquire() as connection:
-      async with connection.cursor() as cursor:
+   competitions_data = []
+   file = open('competitions.json', 'a')
+   file.close()
 
-          # Create 'competition' table if not exists in the database
-          await cursor.execute('CREATE TABLE IF NOT EXISTS competition (id INT NOT NULL PRIMARY KEY AUTO_INCREMENT,name VARCHAR(100) NOT NULL,date DATE NOT NULL,track_length INT NOT NULL);')
-          
-           # Insert the competition information into the 'competition' table
-          await cursor.execute('INSERT INTO competition (name, date, track_length) VALUES (%s, %s, %s)', (
-              competition_info["competition_name"], 
-              competition_info["competition_date"],
-              competition_info["track_length"]
-          ))
-          
-          id = cursor.lastrowid
+   if os.path.isfile("competitions.json"):
+       with open("competitions.json", "r") as file:
+            try:
+                competitions_data = json.load(file)
+            except:
+                competitions_data = []
 
-   return {"id": id}
+   id_count = len(competitions_data) + 1
+
+   new_competition ={
+      "id": id_count,
+      "name": competition_info["competition_name"],
+      "date": competition_info["competition_date"],
+      "track_length": int(competition_info["track_length"])
+   }
+
+   competitions_data.append(new_competition)
+
+   with open("competitions.json", "w") as file:
+       json.dump(competitions_data, file)
+
+   return {"id": id_count}
+
+@app.get("/api/competitions")
+async def getCompetitions():
+    competitions_data = []
+
+    if os.path.isfile("competitions.json"):
+        with open("competitions.json", "r") as file:
+            competitions_data = json.load(file)
+        
+    return competitions_data
+@app.get("/api/competitions/{id}")
+async def get_robots(id: int):
+    if os.path.isdir("competitions-data") == False:
+        os.mkdir("competitions-data")
+        return {"error":"No info"}
+    elif os.path.isfile(f"competitions-data/{id}.json") == False:
+        return {"error":"No info"}
+    else:
+        with open(f'competitions-data/{id}.json', 'r') as file:
+            info = json.load(file)
+            if info == "[]":
+                info = {"error": "No info"}
+        return info
+
+@app.post("/api/competitions/{id}")
+async def robot_list(id: int, robots_list: Request):
+    robot_callback = await robots_list.json()
+    
+    if robot_callback["authorization"] != get_cookie():
+        raise HTTPException(status_code=403, detail="Access denied") 
+
+    with open(f"competitions-data/{id}.json", "w") as file:
+            json.dump(robot_callback['robots'], file)
+            file.close()
+            return {"status": "OK"}
+
 
 if __name__ == '__main__':
-   uvicorn.run(app, host='0.0.0.0', port=8000)
+   uvicorn.run(app, host='127.0.0.1', port=8000)
