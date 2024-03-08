@@ -2,106 +2,167 @@ from fastapi import FastAPI, Request, HTTPException
 import os
 import json
 import uvicorn
+from xata.client import XataClient
+import time
+print("Initializng competition table")
 
+all_competitions_table_schema = {
+  "columns": [
+    {
+      "name": "competition_id",
+      "type": "string"
+    },
+    {
+      "name": "competition_name",
+      "type": "string",
+    },
+    {
+      "name": "city",
+      "type": "string"
+    },
+    {
+        "name": "track_length",
+        "type": "string"
+    },
+    {
+      "name": "season",
+      "type": "string"
+    },
+    {
+      "name": "type",
+      "type": "string"
+    },
+    {
+        "name": "competition_date",
+        "type": "string"
+    },
+    {
+        "name": "refer",
+        "type": "string"
+    }
+  ]
+}
+
+xata = XataClient(api_key="", db_url="")
 app = FastAPI()
 
-def get_cookie():
-    cookie_file = "roborace-ui/cookie.json"
-    with open(cookie_file, "r") as file:
-        data = json.load(file)
-        try:
-            cookie_info = data['cookie_info']
-            return cookie_info
-        except:
-            return False
-        file.close()
+xata.table().create("all_competitions_roborace")
+xata.table().set_schema("all_competitions_roborace", all_competitions_table_schema)
+time.sleep(1)
+xata.table().create("all_competitions_roborace_pro")
+xata.table().set_schema("all_competitions_roborace_pro", all_competitions_table_schema)
+time.sleep(1)
+xata.table().create("all_competitions_roborace_ok")
+xata.table().set_schema("all_competitions_roborace_ok", all_competitions_table_schema)
 
-@app.post("/api/competitions", response_model=Competition)
-async def create_contest(competition: Competition):
-    competition_info = competition.dict()
 
-    if competition_info["authorization"] != get_cookie():
-        raise HTTPException(status_code=403, detail="Access denied")
+print("Initialized. Starting API")
+key_to_exclude = "xata"
+lambda_resp = lambda resp, key_to_exclude: [
+{key: value for key, value in item.items() if key != key_to_exclude}
+for item in resp['records']
+]
 
-    competitions_data = []
-    file = open('competitions.json', 'a')
-    file.close()
+def get_data_type(data, str):
+    if isinstance(data, str):
+        return "string"
+    elif isinstance(data, int):
+        return "int"
+    elif isinstance(data, bool):
+        return "boolean"
+    else:
+        return "string"
 
-    if os.path.isfile("competitions.json"):
-        with open("competitions.json", "r") as file:
-            try:
-                competitions_data = json.load(file)
-            except:
-                competitions_data = []
+def convert_json_to_schema(json_data):
+    schema = {"columns": []}
+    for key, value in json_data.items():
+        schema["columns"].append({
+            "name": key,
+            "type": get_data_type(value)
+        })
+    return schema
 
-    id_count = len(competitions_data) + 1
+@app.post("/api/competitions")
+async def create_contest(competition: Request):
+    competition_info = await competition.json()
+    if competition_info["authorization"] != os.environ.get("PASSWORD_UI"):
+        raise HTTPException(status_code=403, detail="Invalid cookie. Relogin and create competition again")
 
+    data = xata.sql().query("SELECT Max(competition_id) FROM all_competitions_roborace_pro")
+    data_p=json.loads(json.dumps(data))
+    if data_p["records"][0]["max"] == None:
+        id_count = 1
+    else:
+        id_count = int(data_p['records'][0]['max']) + 1
+    city = competition_info['city'].replace(" ", "_").lower()
+    data = xata.table().create(f"competition_{str(id_count)}_{competition_info['type']}_{competition_info['season']}_{city}_roborace")
+    print(data)
+    data = xata.table().create(f"competition_{str(id_count)}_{competition_info['type']}_{competition_info['season']}_{city}_roborace-pro")
+    print(data)
+    data = xata.table().create(f"competition_{str(id_count)}_{competition_info['type']}_{competition_info['season']}_{city}_roborace-ok")
+    print(data)
+
+    refer = ""
+    try:
+            refer =str(competition_info['refer'])
+    except:
+            refer = str(id_count)
     new_competition = {
-        "id": id_count,
-        "name": competition_info["competition_name"],
-        "date": competition_info["competition_date"],
-        "track_length": int(competition_info["track_length"]),
+        "competition_id": str(id_count),
+        "competition_name": competition_info["competition_name"],
+        "competition_date": competition_info["competition_date"],
+        "track_length": str(competition_info["track_length"]),
         "season": competition_info["season"],
         "type": competition_info["type"],
-        "city": competition_info["city"]
+        "city": competition_info["city"],
+        "refer": refer
     }
-
-    competitions_data.append(new_competition)
-
-    with open("competitions.json", "w") as file:
-        json.dump(competitions_data, file)
-
-    location = competition_info["location"]
-    season = competition_info["season"]
-    type_comp = competition_info["type"]
-    city = competition_info["city"]
-
-    if not os.path.isdir("competitions-data"):
-        os.mkdir("competitions-data")
-    if not os.path.isdir(f"competitions-data/{location}"):
-        os.mkdir(f"competitions-data/{location}")
-    if not os.path.isdir(f"competitions-data/{location}/{type_comp}"):
-        os.mkdir(f"competitions-data/{location}/{type_comp}")
-    if not os.path.isdir(f"competitions-data/{location}/{type_comp}/{season}"):
-        os.mkdir(f"competitions-data/{location}/{type_comp}/{season}")
-    if not os.path.isdir(f"competitions-data/{location}/{type_comp}/{season}/{city}"):
-        os.mkdir(f"competitions-data/{location}/{type_comp}/{season}/{city}")
-
+    print(new_competition)
+    data = xata.records().insert("all_competitions_roborace", dict(new_competition))
+    print(data)
+    time.sleep(1)
+    data = xata.records().insert("all_competitions_roborace_pro", dict(new_competition))
+    print(data)
+    time.sleep(1)
+    data = xata.records().insert("all_competitions_roborace_ok", dict(new_competition))
+    print(data)
     return {"id": id_count}
 
-@app.get("/api/competitions")
-async def getCompetitions():
+@app.get("/api/competitions/{category}")
+async def getCompetitions(category: str):
     competitions_data = []
 
-    if os.path.isfile("competitions.json"):
-        with open("competitions.json", "r") as file:
-            competitions_data = json.load(file)
-    
+    if category == "r":
+        cat = "roborace"
+    elif category == "rp":
+            cat = "roborace_pro"
+    elif category == "ro":
+            cat = "roborace_ok"
+    resp = xata.sql().query(f"SELECT * FROM all_competitions_{cat}")
+    print(resp)
+    competitions_data = lambda_resp(resp, key_to_exclude)
     return competitions_data
 
-@app.get("/api/competitions/{location}/{type_comp}/{season}/{city}/{id}")
-async def get_robots(id: int):
+@app.get("/api/competitions/{location}/{type_comp}/{season}/{city}/{category}/{id}")
+async def get_robots(id: int, comp_info: Request):
+    if comp_info['category'] == "r":
+        cat = "roborace"
+    elif comp_info['category'] == "rp":
+            cat = "roborace pro"
+    elif comp_info['category'] == "ro":
+            cat = "roborace ok"
 
-    if os.path.isfile(f"competitions-data/{location}/{type_comp}/{season}/{city}/{id}.json"):
-        with open(f'competitions-data/{location}/{type_comp}/{season}/{city}/{id}.json', 'r') as file:
-            info = json.load(file)
-            if info == "[]":
-                info = {"error": "No info"}
-            return info
-    else:
-        return {"error":"No info"}
+    resp = xata.sql().query(f"SELECT * FROM 'competition - {comp_info['id']} - {comp_info['type_comp']} - {comp_info['season']} - {comp_info['city']} - {cat}'")
 
-@app.post("/api/competitions/{location}/{type_comp}/{season}/{city}/{id}")
-async def robot_list(id: int, robots_list: Request):
-    robot_callback = await robots_list.json()
 
-    if robot_callback["authorization"] != get_cookie():
-        raise HTTPException(status_code=403, detail="Access denied") 
-
-    with open(f"competitions-data/{location}/{type_comp}/{season}/{city}/{id}.json", "w") as file:
-        json.dump(robot_callback['robots'], file)
-        file.close()
-        return {"status": "OK"}
+# @app.post("/api/competitions/{location}/{type_comp}/{season}/{city}/{id}")
+# async def robot_list(id: int, robots_list: Request):
+#     robot_callback = await robots_list.json()
+#
+#     if robot_callback["authorization"] != get_cookie():
+#         raise HTTPException(status_code=403, detail="Access denied")
+#
+#     xata.
 
 if __name__ == '__main__':
     uvicorn.run(app, host='127.0.0.1', port=8000)
