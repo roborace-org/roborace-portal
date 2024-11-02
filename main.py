@@ -1,168 +1,144 @@
 from fastapi import FastAPI, Request, HTTPException
+from pydantic import BaseModel
 import os
-import json
 import uvicorn
 from xata.client import XataClient
 import time
-print("Initializng competition table")
 
-all_competitions_table_schema = {
-  "columns": [
-    {
-      "name": "competition_id",
-      "type": "string"
-    },
-    {
-      "name": "competition_name",
-      "type": "string",
-    },
-    {
-      "name": "city",
-      "type": "string"
-    },
-    {
-        "name": "track_length",
-        "type": "string"
-    },
-    {
-      "name": "season",
-      "type": "string"
-    },
-    {
-      "name": "type",
-      "type": "string"
-    },
-    {
-        "name": "competition_date",
-        "type": "string"
-    },
-    {
-        "name": "refer",
-        "type": "string"
-    }
-  ]
-}
+# Define Pydantic models
+class Competition(BaseModel):
+    authorization: str
+    competition_name: str
+    competition_date: str
+    track_length: str
+    season: str
+    type: str
+    city: str
+    refer: str = None
 
-xata = XataClient(api_key="", db_url="")
+class RobotList(BaseModel):
+    authorization: str
+    robots: list
+
+# Initialize the FastAPI app
 app = FastAPI()
 
-xata.table().create("all_competitions_roborace")
-xata.table().set_schema("all_competitions_roborace", all_competitions_table_schema)
-time.sleep(1)
-xata.table().create("all_competitions_roborace_pro")
-xata.table().set_schema("all_competitions_roborace_pro", all_competitions_table_schema)
-time.sleep(1)
-xata.table().create("all_competitions_roborace_ok")
-xata.table().set_schema("all_competitions_roborace_ok", all_competitions_table_schema)
+# Initialize Xata client
+xata = XataClient(api_key=os.environ.get("XATA_API_KEY"), db_url=os.environ.get("XATA_DB_URL"))
 
+# Define the schema for competition tables
+competition_schema = {
+    "columns": [
+        {"name": "competition_id", "type": "string"},
+        {"name": "competition_name", "type": "string"},
+        {"name": "city", "type": "string"},
+        {"name": "track_length", "type": "string"},
+        {"name": "season", "type": "string"},
+        {"name": "type", "type": "string"},
+        {"name": "competition_date", "type": "string"},
+        {"name": "refer", "type": "string"},
+    ]
+}
 
-print("Initialized. Starting API")
-key_to_exclude = "xata"
-lambda_resp = lambda resp, key_to_exclude: [
-{key: value for key, value in item.items() if key != key_to_exclude}
-for item in resp['records']
-]
+# Initialize tables and schemas
+def initialize_tables():
+    print("Initializing competition tables")
+    tables = ["all_competitions_roborace", "all_competitions_roborace_pro", "all_competitions_roborace_ok"]
+    for table in tables:
+        xata.table().create(table)
+        xata.table().set_schema(table, competition_schema)
+        time.sleep(1)
+    print("Initialized tables. Starting API")
 
-def get_data_type(data, str):
-    if isinstance(data, str):
-        return "string"
-    elif isinstance(data, int):
-        return "int"
-    elif isinstance(data, bool):
-        return "boolean"
-    else:
-        return "string"
+initialize_tables()
 
-def convert_json_to_schema(json_data):
-    schema = {"columns": []}
-    for key, value in json_data.items():
-        schema["columns"].append({
-            "name": key,
-            "type": get_data_type(value)
-        })
-    return schema
+# Helper function to generate table suffix
+def get_category_suffix(category):
+    category_map = {"r": "roborace", "rp": "roborace_pro", "ro": "roborace_ok"}
+    return category_map.get(category, None)
 
+# Create a new competition
 @app.post("/api/competitions")
-async def create_contest(competition: Request):
-    competition_info = await competition.json()
-    if competition_info["authorization"] != os.environ.get("PASSWORD_UI"):
-        raise HTTPException(status_code=403, detail="Invalid cookie. Relogin and create competition again")
+async def create_competition(competition: Competition):
+    if competition.authorization != os.environ.get("PASSWORD_UI"):
+        raise HTTPException(status_code=403, detail="Invalid authorization")
 
-    data = xata.sql().query("SELECT Max(competition_id) FROM all_competitions_roborace_pro")
-    data_p=json.loads(json.dumps(data))
-    if data_p["records"][0]["max"] == None:
-        id_count = 1
-    else:
-        id_count = int(data_p['records'][0]['max']) + 1
-    city = competition_info['city'].replace(" ", "_").lower()
-    data = xata.table().create(f"competition_{str(id_count)}_{competition_info['type']}_{competition_info['season']}_{city}_roborace")
-    print(data)
-    data = xata.table().create(f"competition_{str(id_count)}_{competition_info['type']}_{competition_info['season']}_{city}_roborace-pro")
-    print(data)
-    data = xata.table().create(f"competition_{str(id_count)}_{competition_info['type']}_{competition_info['season']}_{city}_roborace-ok")
-    print(data)
+    max_comp_id_data = xata.sql().query("SELECT Max(competition_id) FROM all_competitions_roborace_pro")
+    max_comp_id = next((record.get("max") for record in max_comp_id_data.get("records", [])), None)
+    comp_id = 1 if max_comp_id is None else int(max_comp_id) + 1
 
-    refer = ""
-    try:
-            refer =str(competition_info['refer'])
-    except:
-            refer = str(id_count)
-    new_competition = {
-        "competition_id": str(id_count),
-        "competition_name": competition_info["competition_name"],
-        "competition_date": competition_info["competition_date"],
-        "track_length": str(competition_info["track_length"]),
-        "season": competition_info["season"],
-        "type": competition_info["type"],
-        "city": competition_info["city"],
+    city = competition.city.replace(" ", "_").lower()
+    refer = competition.refer if competition.refer else str(comp_id)
+
+    table_suffixes = [
+        f"competition_{comp_id}_{competition.type}_{competition.season}_{city}_roborace",
+        f"competition_{comp_id}_{competition.type}_{competition.season}_{city}_roborace-pro",
+        f"competition_{comp_id}_{competition.type}_{competition.season}_{city}_roborace-ok"
+    ]
+
+    for suffix in table_suffixes:
+        xata.table().create(suffix)
+        print(f"Created table: {suffix}")
+
+    new_competition_record = {
+        "competition_id": str(comp_id),
+        "competition_name": competition.competition_name,
+        "competition_date": competition.competition_date,
+        "track_length": competition.track_length,
+        "season": competition.season,
+        "type": competition.type,
+        "city": competition.city,
         "refer": refer
     }
-    print(new_competition)
-    data = xata.records().insert("all_competitions_roborace", dict(new_competition))
-    print(data)
-    time.sleep(1)
-    data = xata.records().insert("all_competitions_roborace_pro", dict(new_competition))
-    print(data)
-    time.sleep(1)
-    data = xata.records().insert("all_competitions_roborace_ok", dict(new_competition))
-    print(data)
-    return {"id": id_count}
 
+    for table in ["all_competitions_roborace", "all_competitions_roborace_pro", "all_competitions_roborace_ok"]:
+        xata.records().insert(table, new_competition_record)
+        time.sleep(1)
+
+    return {"id": comp_id}
+
+# Retrieve competitions
 @app.get("/api/competitions/{category}")
-async def getCompetitions(category: str):
-    competitions_data = []
+async def get_competitions(category: str):
+    suffix = get_category_suffix(category)
+    if not suffix:
+        raise HTTPException(status_code=404, detail="Category not found")
 
-    if category == "r":
-        cat = "roborace"
-    elif category == "rp":
-            cat = "roborace_pro"
-    elif category == "ro":
-            cat = "roborace_ok"
-    resp = xata.sql().query(f"SELECT * FROM all_competitions_{cat}")
-    print(resp)
-    competitions_data = lambda_resp(resp, key_to_exclude)
-    return competitions_data
+    table = f"all_competitions_{suffix}"
+    data = xata.sql().query(f"SELECT * FROM {table}")
+    return data.get('records', [])
 
+# Retrieve robots associated with a competition
 @app.get("/api/competitions/{location}/{type_comp}/{season}/{city}/{category}/{id}")
-async def get_robots(id: int, comp_info: Request):
-    if comp_info['category'] == "r":
-        cat = "roborace"
-    elif comp_info['category'] == "rp":
-            cat = "roborace pro"
-    elif comp_info['category'] == "ro":
-            cat = "roborace ok"
+async def get_robots(id: int, location: str, type_comp: str, season: str, city: str, category: str):
+    suffix = get_category_suffix(category)
+    if not suffix:
+        raise HTTPException(status_code=404, detail="Category not found")
 
-    resp = xata.sql().query(f"SELECT * FROM 'competition - {comp_info['id']} - {comp_info['type_comp']} - {comp_info['season']} - {comp_info['city']} - {cat}'")
+    table_name = f"competition_{id}_{type_comp}_{season}_{city}_{suffix}"
+    data = xata.sql().query(f"SELECT * FROM {table_name}")
+    return data.get('records', [])
 
+# Update robots associated with a competition
+@app.post("/api/competitions/{location}/{type_comp}/{season}/{city}/{category}/{id}")
+async def update_robot_list(id: int, location: str, type_comp: str, season: str, city: str, 
+                            category: str, robots_list: RobotList):
+    if robots_list.authorization != os.environ.get("PASSWORD_UI"):
+        raise HTTPException(status_code=403, detail="Access denied")
 
-# @app.post("/api/competitions/{location}/{type_comp}/{season}/{city}/{id}")
-# async def robot_list(id: int, robots_list: Request):
-#     robot_callback = await robots_list.json()
-#
-#     if robot_callback["authorization"] != get_cookie():
-#         raise HTTPException(status_code=403, detail="Access denied")
-#
-#     xata.
+    suffix = get_category_suffix(category)
+    if not suffix:
+        raise HTTPException(status_code=404, detail="Category not found")
+
+    table_name = f"competition_{id}_{type_comp}_{season}_{city}_{suffix}"
+    record_id = f"{id}_{type_comp}_{season}_{city}_{category}"
+
+    response = xata.records().update(table_name, record_id, {"robots": robots_list.robots})
+
+    if response.get('updated', 0) > 0:
+        return {"status": "OK"}
+    else:
+        raise HTTPException(status_code=500, detail="Failed to update robot list")
 
 if __name__ == '__main__':
     uvicorn.run(app, host='127.0.0.1', port=8000)
